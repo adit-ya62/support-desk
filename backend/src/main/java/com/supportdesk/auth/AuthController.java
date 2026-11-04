@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 
 @RestController
@@ -12,10 +13,12 @@ public class AuthController {
 
     private final UserRepository users;
     private final PasswordEncoder encoder;
+    private final JwtService jwt;
 
-    public AuthController(UserRepository users, PasswordEncoder encoder) {
+    public AuthController(UserRepository users, PasswordEncoder encoder, JwtService jwt) {
         this.users = users;
         this.encoder = encoder;
+        this.jwt = jwt;
     }
 
     @PostMapping("/register")
@@ -37,6 +40,7 @@ public class AuthController {
         if (user.isEmpty() || !encoder.matches(req.password(), user.get().getPasswordHash())) {
             return ResponseEntity.status(401).body(Map.of("error", "Invalid email or password"));
         }
-        return ResponseEntity.ok(Map.of("message", "Login successful"));
+        String token = jwt.generateToken(user.get());
+        return ResponseEntity.ok(Map.of("token", token, "role", user.get().getRole().name()));
     }
 }
